@@ -9,11 +9,11 @@
   { vehicle-id: (string-utf8 17) }  ;; VIN number
   {
     owner: principal,
-    make: (string-utf8 50),
-    model: (string-utf8 50),
+    make: (string-ascii 50),  ;; Changed to string-ascii to match literals
+    model: (string-ascii 50),  ;; Changed to string-ascii to match literals
     year: uint,
     registration-id: uint,
-    status: (string-utf8 20)
+    status: (string-ascii 20)
   }
 )
 
@@ -43,8 +43,8 @@
 ;; Vehicle registration
 (define-public (register-vehicle 
     (vehicle-id (string-utf8 17))
-    (make (string-utf8 50))
-    (model (string-utf8 50))
+    (make (string-ascii 50))  ;; Changed to string-ascii to match map
+    (model (string-ascii 50))  ;; Changed to string-ascii to match map
     (year uint)
   )
   (let ((registration-id (var-get counter)))
