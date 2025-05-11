@@ -2,6 +2,7 @@
 ;; A contract for registering and transferring vehicle ownership on the blockchain
 
 (define-data-var admin principal tx-sender)
+(define-data-var counter uint u0)
 
 ;; Data maps
 (define-map vehicles
@@ -11,7 +12,7 @@
     make: (string-utf8 50),
     model: (string-utf8 50),
     year: uint,
-    registered-at: uint,
+    registration-id: uint,
     status: (string-utf8 20)
   }
 )
@@ -21,7 +22,7 @@
   {
     previous-owner: principal,
     new-owner: principal,
-    timestamp: uint
+    transaction-id: uint
   }
 )
 
@@ -46,7 +47,7 @@
     (model (string-utf8 50))
     (year uint)
   )
-  (let ((current-time (get-block-height)))
+  (let ((registration-id (var-get counter)))
     (asserts! (is-none (map-get? vehicles { vehicle-id: vehicle-id })) ERR-VEHICLE-EXISTS)
     
     (map-set vehicles
@@ -56,10 +57,12 @@
         make: make,
         model: model,
         year: year,
-        registered-at: current-time,
+        registration-id: registration-id,
         status: "active"
       }
     )
+    
+    (var-set counter (+ (var-get counter) u1))
     
     (ok true)
   )
@@ -72,8 +75,7 @@
   )
   (let (
     (vehicle (unwrap! (map-get? vehicles { vehicle-id: vehicle-id }) ERR-VEHICLE-NOT-FOUND))
-    (current-time (get-block-height))
-    (tx-id (+ (default-to u0 (get-last-tx-id)) u1))
+    (tx-id (var-get counter))
   )
     (asserts! (is-eq (get owner vehicle) tx-sender) ERR-NOT-OWNER)
     
@@ -89,9 +91,11 @@
       {
         previous-owner: tx-sender,
         new-owner: new-owner,
-        timestamp: current-time
+        transaction-id: tx-id
       }
     )
+    
+    (var-set counter (+ (var-get counter) u1))
     
     (ok true)
   )
@@ -109,20 +113,13 @@
       make: "", 
       model: "", 
       year: u0, 
-      registered-at: u0, 
-      status: "" 
+      registration-id: u0, 
+      status: ""
     } 
     (map-get? vehicles { vehicle-id: vehicle-id })
   ))
 )
 
-;; Helper functions
-(define-read-only (get-last-tx-id)
-  (map-get? last-tx-id "id")
-)
-
-(define-map last-tx-id (string-ascii 2) uint)
-
-(define-private (set-last-tx-id (id uint))
-  (map-set last-tx-id "id" id)
+(define-read-only (get-transaction-count)
+  (var-get counter)
 )
